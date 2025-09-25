@@ -18,3 +18,6 @@ CREATE TABLE audit_log (
 
 -- Create sequence for audit_log.log_id
 CREATE SEQUENCE audit_log_seq START WITH 1 INCREMENT BY 1;
+
+-- Create sequence for employees.emp_id (for auto-increment in create_employee)
+CREATE SEQUENCE employees_seq START WITH 1 INCREMENT BY 1;
