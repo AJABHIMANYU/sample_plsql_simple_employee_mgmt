@@ -7,6 +7,58 @@ CREATE OR REPLACE PACKAGE BODY simple_employee_mgmt_pkg AS
     COMMIT;
   END log_action;
 
+  PROCEDURE create_employee(p_name IN VARCHAR2, p_salary IN NUMBER, p_dept_id IN NUMBER) IS
+    v_emp_id NUMBER;
+  BEGIN
+    v_emp_id := employees_seq.NEXTVAL;
+    INSERT INTO employees (emp_id, name, salary, department_id)
+    VALUES (v_emp_id, p_name, p_salary, p_dept_id);
+    log_action(v_emp_id, 'CREATE', 'Created employee ' || p_name || ' with salary ' || p_salary, USER);
+    COMMIT;
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE_APPLICATION_ERROR(-20004, 'Error creating employee: ' || SQLERRM);
+  END create_employee;
+
+  PROCEDURE read_employee(p_emp_id IN NUMBER, p_name OUT VARCHAR2, p_salary OUT NUMBER, p_dept_id OUT NUMBER) IS
+  BEGIN
+    SELECT name, salary, department_id
+    INTO p_name, p_salary, p_dept_id
+    FROM employees
+    WHERE emp_id = p_emp_id;
+  EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+      RAISE_APPLICATION_ERROR(-20002, 'Employee ID ' || p_emp_id || ' not found');
+  END read_employee;
+
+  PROCEDURE update_employee(p_emp_id IN NUMBER, p_name IN VARCHAR2, p_dept_id IN NUMBER) IS
+  BEGIN
+    UPDATE employees
+    SET name = p_name, department_id = p_dept_id
+    WHERE emp_id = p_emp_id;
+    IF SQL%ROWCOUNT = 0 THEN
+      RAISE_APPLICATION_ERROR(-20002, 'Employee ID ' || p_emp_id || ' not found');
+    END IF;
+    log_action(p_emp_id, 'UPDATE', 'Updated name to ' || p_name || ' and department to ' || p_dept_id, USER);
+    COMMIT;
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE_APPLICATION_ERROR(-20005, 'Error updating employee: ' || SQLERRM);
+  END update_employee;
+
+  PROCEDURE delete_employee(p_emp_id IN NUMBER) IS
+  BEGIN
+    DELETE FROM employees WHERE emp_id = p_emp_id;
+    IF SQL%ROWCOUNT = 0 THEN
+      RAISE_APPLICATION_ERROR(-20002, 'Employee ID ' || p_emp_id || ' not found');
+    END IF;
+    log_action(p_emp_id, 'DELETE', 'Deleted employee', USER);
+    COMMIT;
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE_APPLICATION_ERROR(-20006, 'Error deleting employee: ' || SQLERRM);
+  END delete_employee;
+
   PROCEDURE give_raise(p_emp_id IN NUMBER, p_raise_amount IN NUMBER, p_user IN VARCHAR2 DEFAULT USER) IS
     v_name employees.name%TYPE;
     v_current_salary employees.salary%TYPE;
